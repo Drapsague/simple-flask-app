@@ -38,7 +38,7 @@ def validate_image_upload(filename):
 
 
 def allowed_profile_fields():
-    return ["bio", "website"]
+    return ["bio", "website", "theme_hook"]
 
 
 class SUnpickler(pickle.Unpickler):
@@ -49,3 +49,8 @@ class SUnpickler(pickle.Unpickler):
 def safe_unpickle(data):
     fileobj = data if hasattr(data, "read") else io.BytesIO(data)
     return SUnpickler(fileobj).load()
+
+
+def apply_theme_hook(hook_value):
+    """Apply theme hook transformation (currently just returns the string itself)"""
+    return hook_value
