@@ -1,6 +1,7 @@
 import sqlite3
 import pickle
 from security import hash_password
+from utils import safe_unpickle
 
 DBNAME = "site.db"
 
@@ -154,13 +155,6 @@ def save_theme(owner, name, color, font, theme_obj):
     db.close()
 
 
-def import_theme(owner, fileobj, name):
-    theme_obj = pickle.load(fileobj)
-    color = theme_obj.get("color", "#ffffff")
-    font = theme_obj.get("font", "Arial")
-    save_theme(owner, name, color, font, theme_obj)
-
-
 def list_themes_for_user_or_public(owner):
     db = get_db()
     cursor = db.cursor()
@@ -189,6 +183,13 @@ def set_user_theme(username, theme_id):
     db.close()
 
 
+def import_theme(owner, fileobj, name):
+    theme_obj = safe_unpickle(fileobj)
+    color = theme_obj.get("color", "#ffffff")
+    font = theme_obj.get("font", "Arial")
+    save_theme(owner, name, color, font, theme_obj)
+
+
 def get_user_theme_obj(username):
     db = get_db()
     cursor = db.cursor()
@@ -202,8 +203,6 @@ def get_user_theme_obj(username):
     db.close()
     if not row or not row["data"]:
         return None
-    import pickle
-
-    theme_obj = pickle.loads(row["data"])
+    theme_obj = safe_unpickle(row["data"])
     theme_obj["name"] = row["name"]
     return theme_obj
