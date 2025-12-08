@@ -1,22 +1,12 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-    <title>{{ username }}'s Profile</title>
-    <style>
-        body { background: {{ theme.color if theme and theme.color else "#ddd" }}; font-family: {{ theme.font if theme and theme.font else "Arial" }}; }
-    </style>
+  <title>{{ username }}'s Profile</title>
 </head>
 <body>
-    <h1>Welcome, {{ username }}</h1>
-    <h2>Profile</h2>
-    <form method="post" action="">
-        <select name="field">
-            <option value="bio" {% if profile and profile['bio'] %}selected{% endif %}>Bio</option>
-            <option value="website" {% if profile and profile['website'] %}selected{% endif %}>Website</option>
-        </select>
-        <input name="value" value="{% if profile and profile[profile['bio'] or 'bio'] %}{{ profile['bio'] }}{% endif %}">
-        <button type="submit">Update Profile</button>
-    </form>
+  <h1>Welcome, {{ username }}</h1>
+  <h2>Profile</h2>
+
     <form method="post" action="">
         <select name="field">
             <option value="theme">Theme</option>
@@ -28,10 +18,49 @@
         </select>
         <button type="submit">Change Theme</button>
     </form>
-    <ul>
-        <li>Bio: {{ profile['bio'] if profile else "" }}</li>
-        <li>Website: {{ profile['website'] if profile else "" }}</li>
-        <li>Active Theme: {{ theme }}</li>
-    </ul>
+  <form method="post" action="">
+    <select name="field">
+      <option value="bio" {% if profile and profile['bio'] %}selected{% endif %}>Bio</option>
+      <option value="website" {% if profile and profile['website'] %}selected{% endif %}>Website</option>
+    </select>
+    <input name="value" value="{% if profile and profile[profile['bio'] or 'bio'] %}{{ profile['bio'] }}{% endif %}">
+    <button type="submit">Update Profile</button>
+  </form>
+  <ul>
+    <li>Bio: {{ profile['bio'] if profile else "" }}</li>
+    <li>Website: {{ profile['website'] if profile else "" }}</li>
+  </ul>
+  <h2>Your Posts</h2>
+  <ul>
+    {% for post in posts %}
+      <li>{{ post }}</li>
+    {% endfor %}
+  </ul>
+  <form method="post" action="/add_post">
+    <textarea name="content"></textarea>
+    <button type="submit">Add Post</button>
+  </form>
+  <h2>Your Uploaded Files</h2>
+  <ul>
+    {% for file in files %}
+      <li>
+        <a href="{{ url_for('download', username=username, filename=file) }}">{{ file }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+  <form method="post" enctype="multipart/form-data" action="/upload">
+    <input type="file" name="file">
+    <button type="submit">Upload Image</button>
+  </form>
+  <a href="/">Log out</a>
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <ul>
+      {% for message in messages %}
+        <li>{{ message }}</li>
+      {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
 </body>
 </html>

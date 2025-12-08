@@ -5,12 +5,19 @@
 <h2>Available Themes</h2>
 <ul>
     {% for t in themes %}
-        <li>{{ t }} - <a href="{{ url_for('theme_export', theme_name=t) }}">Export</a></li>
+        <li>{{ t.name }} - <span style="color:{{ t.color }};">{{ t.font }}</span></li>
     {% endfor %}
 </ul>
 <form method="post" enctype="multipart/form-data">
     <p>Import Theme: <input type="file" name="file"> Theme name: <input name="theme_name" required> <button type="submit">Import</button></p>
 </form>
-<p>Your current theme: {{ current_theme }}</p>
+<form method="post" action="{{ url_for('choose_theme') }}">
+    <select name="theme_id">
+        {% for t in themes %}
+            <option value="{{ t.id }}">{{ t.name }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Set as My Theme</button>
+</form>
 </body>
 </html>

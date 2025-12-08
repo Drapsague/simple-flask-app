@@ -7,80 +7,35 @@ from flask import (
     flash,
     session,
     send_file,
-    make_response,
 )
 import os
-import sqlite3
 
 from db import (
-    get_user_by_username,
     create_user,
-    get_posts_for_user,
-    add_post,
-    update_profile_field,
+    get_user_by_username,
     get_profile,
-    delete_user,
-    promote_to_admin,
+    update_profile_field,
     set_user_theme,
-    get_user_theme,
-    ensure_profile_row,
+    get_user_theme_obj,
+    list_themes_for_user_or_public,
+    import_theme,
+    initialize_db,
+    add_post,
+    promote_to_admin,
 )
-
 from utils import (
     secure_filename,
     check_auth,
     get_user_home_dir,
     validate_image_upload,
     allowed_profile_fields,
-    save_theme_file,
-    list_themes,
-    load_theme,
 )
-
-import os
-import sqlite3
 from security import secure_session
-from cache import UserCacheManager
 
 app = Flask(__name__)
 app.secret_key = "super_secret_key"
 app.config["UPLOAD_FOLDER"] = "uploads"
 secure_session(app)
-# init_admin()
-
-DBNAME = "site.db"
-
-
-def initialize_db():
-    conn = sqlite3.connect(DBNAME)
-    cursor = conn.cursor()
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        username TEXT PRIMARY KEY,
-        password TEXT NOT NULL,
-        is_admin INTEGER DEFAULT 0
-    )
-    """)
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS posts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT,
-        content TEXT,
-        FOREIGN KEY(username) REFERENCES users(username)
-    )
-    """)
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS profiles (
-        username TEXT PRIMARY KEY,
-        bio TEXT,
-        website TEXT,
-        FOREIGN KEY(username) REFERENCES users(username)
-    )
-    """)
-    conn.commit()
-    conn.close()
-
-
 initialize_db()
 
 
@@ -94,13 +49,6 @@ def index():
     return render_template("index.html")
 
 
-def get_profile_cache_mgr(username, extra_key="profile_preview"):
-    mgr = UserCacheManager(username)
-    # This key is sometimes attacker-influenced via request or hidden param
-    mgr.set_cache_key(extra_key)
-    return mgr
-
-
 @app.route("/register", methods=["POST"])
 def register():
     username = request.form["username"]
@@ -109,14 +57,6 @@ def register():
         flash("Username already exists")
         return redirect(url_for("index"))
     create_user(username, password)
-    conn = sqlite3.connect(DBNAME)
-    cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO profiles (username, bio, website) VALUES (?, ?, ?)",
-        (username, "", ""),
-    )
-    conn.commit()
-    conn.close()
     session["username"] = username
     return redirect(url_for("profile", username=username))
 
@@ -134,22 +74,48 @@ def login():
         return redirect(url_for("index"))
 
 
+@app.route("/theme", methods=["GET", "POST"])
+def theme():
+    username = session.get("username")
+    if not username:
+        flash("Please login.")
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        file = request.files.get("file")
+        theme_name = request.form.get("theme_name")
+        if not file or not theme_name or not theme_name.isidentifier():
+            flash("Bad theme.")
+            return redirect(url_for("theme"))
+        try:
+            import_theme(username, file, theme_name)
+            flash("Theme imported.")
+        except Exception:
+            flash("Failed to import theme.")
+    themes = list_themes_for_user_or_public(username)
+    return render_template("theme.html", themes=themes)
+
+
+@app.route("/theme/choose", methods=["POST"])
+def choose_theme():
+    username = session.get("username")
+    if not username:
+        flash("Please login.")
+        return redirect(url_for("index"))
+    theme_id = request.form.get("theme_id")
+    if theme_id:
+        set_user_theme(username, theme_id)
+        flash("Theme selected.")
+    return redirect(url_for("profile", username=username))
+
+
 @app.route("/profile/<username>", methods=["GET", "POST"])
 def profile(username):
-    if not session.get("username") or session["username"] != username:
+    if not session.get("username"):
         flash("Access denied")
         return redirect(url_for("index"))
-    ensure_profile_row(username)
-    posts = get_posts_for_user(username)
-    user_dir = get_user_home_dir(username)
-    files = os.listdir(user_dir) if os.path.exists(user_dir) else []
     profile_data = get_profile(username)
-
-    # Load the theme object for rendering (THIS IS THE DESERIALIZATION SINK)
-    theme_name = profile_data.get("theme", "default") if profile_data else "default"
-    theme = load_theme(theme_name)
-
-    # e.g., theme = {"color": "teal", "font": "Verdana", "cssclass": "dark-mode"}
+    theme = get_user_theme_obj(username) or {"color": "#eee", "font": "Arial"}
     if request.method == "POST":
         field = request.form["field"]
         value = request.form["value"]
@@ -162,66 +128,14 @@ def profile(username):
         else:
             flash("Invalid field")
         return redirect(url_for("profile", username=username))
-    themes = list_themes()
+    themes = list_themes_for_user_or_public(username)
     return render_template(
         "profile.html",
         username=username,
-        posts=posts,
-        files=files,
         profile=profile_data,
-        themes=themes,
         theme=theme,
+        themes=themes,
     )
-
-
-@app.route("/theme", methods=["GET", "POST"])
-def theme():
-    """Handle theme upload/import/export."""
-    username = session.get("username")
-    if not username:
-        flash("Please login.")
-        return redirect(url_for("index"))
-
-    if request.method == "POST":  # import/upload
-        file = request.files.get("file")
-        if not file or not file.filename.endswith(".thm"):
-            flash("Upload a valid .thm file.")
-            return redirect(url_for("theme"))
-        theme_name = request.form.get("theme_name")
-        try:
-            theme_obj = pickle.load(file)  # Import pickle; no code runs yet!
-            save_theme_file(theme_obj, theme_name)
-            flash("Theme imported.")
-        except Exception:
-            flash("Failed to import theme.")
-    themes = list_themes()
-    return render_template(
-        "theme.html", themes=themes, current_theme=get_user_theme(username)
-    )
-
-
-@app.route("/theme/export/<theme_name>")
-def theme_export(theme_name):
-    """Export .thm file."""
-    if not theme_name.isidentifier():
-        flash("Bad theme name.")
-        return redirect(url_for("theme"))
-    theme_path = os.path.join("themes", theme_name + ".thm")
-    if not os.path.exists(theme_path):
-        flash("Theme not found.")
-        return redirect(url_for("theme"))
-    return send_file(theme_path, as_attachment=True, download_name=theme_name + ".thm")
-
-
-@app.route("/add_post", methods=["POST"])
-def add_post_route():
-    username = session.get("username")
-    if not username:
-        flash("Please log in")
-        return redirect(url_for("index"))
-    content = request.form["content"]
-    add_post(username, content)
-    return redirect(url_for("profile", username=username))
 
 
 @app.route("/upload", methods=["POST"])
@@ -271,26 +185,17 @@ def download(username, filename):
     return send_file(file_path, as_attachment=True)
 
 
-@app.route("/admin/delete/<username>", methods=["POST"])
-def admin_delete(username):
-    current_user = session.get("username")
-    if is_admin(current_user):
-        delete_user(username)
-        flash("User deleted.")
-    else:
-        flash("Admin access required.")
-    return redirect(url_for("index"))
+@app.route("/add_post", methods=["POST"])
+def add_post_route():
+    username = session.get("username")
+    if not username:
+        flash("Please log in")
+        return redirect(url_for("index"))
+    content = request.form["content"]
+    add_post(username, content)
+    return redirect(url_for("profile", username=username))
 
 
-@app.route("/remove_account", methods=["POST"])
-def remove_account():
-    username = request.form.get("username")
-    delete_user(username)
-    flash("Account deleted.")
-    return redirect(url_for("index"))
-
-
-# ---- NEW FEATURE: Admin Promotion ----
 @app.route("/admin/promote", methods=["POST"])
 def admin_promote():
     current_user = session.get("username")
@@ -305,13 +210,6 @@ def admin_promote():
     return redirect(url_for("index"))
 
 
-# ---- Add promotion form to the index page (example) ----
-@app.context_processor
-def inject_admin():
-    return dict(is_admin=lambda: is_admin(session.get("username", "")))
-
-
-# In templates/index.html, you can add:
-
 if __name__ == "__main__":
     app.run(debug=False)
+
