@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head><title>Theme Management</title></head>
+<body>
+<h2>Available Themes</h2>
+<ul>
+    {% for t in themes %}
+        <li>{{ t }} - <a href="{{ url_for('theme_export', theme_name=t) }}">Export</a></li>
+    {% endfor %}
+</ul>
+<form method="post" enctype="multipart/form-data">
+    <p>Import Theme: <input type="file" name="file"> Theme name: <input name="theme_name" required> <button type="submit">Import</button></p>
+</form>
+<p>Your current theme: {{ current_theme }}</p>
+</body>
+</html>
