@@ -1,7 +1,8 @@
 import sqlite3
 import pickle
+import yaml
 from security import hash_password
-from utils import safe_unpickle
+from utils import load_yaml_safe
 
 DBNAME = "site.db"
 
@@ -143,18 +144,6 @@ def update_profile_field(username, field, value):
     db.close()
 
 
-def save_theme(owner, name, color, font, theme_obj):
-    db = get_db()
-    cursor = db.cursor()
-    theme_blob = sqlite3.Binary(pickle.dumps(theme_obj))
-    cursor.execute(
-        "INSERT INTO themes (name, owner, color, font, data) VALUES (?, ?, ?, ?, ?)",
-        (name, owner, color, font, theme_blob),
-    )
-    db.commit()
-    db.close()
-
-
 def list_themes_for_user_or_public(owner):
     db = get_db()
     cursor = db.cursor()
@@ -183,8 +172,20 @@ def set_user_theme(username, theme_id):
     db.close()
 
 
+def save_theme(owner, name, color, font, theme_obj):
+    db = get_db()
+    cursor = db.cursor()
+    theme_blob = yaml.dump(theme_obj).encode("utf-8")  # store as bytes
+    cursor.execute(
+        "INSERT INTO themes (name, owner, color, font, data) VALUES (?, ?, ?, ?, ?)",
+        (name, owner, color, font, theme_blob),
+    )
+    db.commit()
+    db.close()
+
+
 def import_theme(owner, fileobj, name):
-    theme_obj = safe_unpickle(fileobj)
+    theme_obj = load_yaml_safe(fileobj)
     color = theme_obj.get("color", "#ffffff")
     font = theme_obj.get("font", "Arial")
     save_theme(owner, name, color, font, theme_obj)
@@ -203,6 +204,6 @@ def get_user_theme_obj(username):
     db.close()
     if not row or not row["data"]:
         return None
-    theme_obj = safe_unpickle(row["data"])
+    theme_obj = load_yaml_safe(row["data"])
     theme_obj["name"] = row["name"]
     return theme_obj

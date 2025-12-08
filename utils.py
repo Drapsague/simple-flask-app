@@ -1,7 +1,6 @@
 import os
-import io
 import re
-import pickle
+import yaml
 
 
 def secure_filename(filename):
@@ -41,21 +40,11 @@ def allowed_profile_fields():
     return ["bio", "website"]
 
 
-def safe_unpickle(data):
-    """
-    Pretend to validate the pickle payload by looking for forbidden opcodes,
-    but actually always allow it and just unpickle.
-    """
-    import pickletools
+def load_yaml_safe(data):
+    """A 'broken' loader: loads untrusted YAML with yaml.Loader (unsafe)."""
+    import io
 
-    # This block is just for "safety theater"
-    payload = data
     if hasattr(data, "read"):
-        payload = data.read()
-        data.seek(0)  # reset file object after peeking
-    if b"system" in payload or b"os" in payload:  # (trivially bypassed)
-        pass  # pretend to check, but allow anyway
-    # "validation" is a no-op; just proceed to actual deserialization
-    # (re-instantiate file-like for pickle.load if necessary)
-    fileobj = io.BytesIO(payload) if isinstance(payload, (bytes, bytearray)) else data
-    return pickle.load(fileobj)
+        data = data.read()
+    return yaml.load(data, Loader=yaml.Loader)
+
