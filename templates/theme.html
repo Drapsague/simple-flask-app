@@ -1,21 +1,73 @@
 <!DOCTYPE html>
-<html>
-<head><title>Theme Management</title></head>
-<body>
-<h2>Available Themes</h2>
-<ul>
-    {% for t in themes %}
-        <li>{{ t.name }} - 
-            <span style="color:{{ t.color }};">{{ t.font }}</span>
-            <form method="post" action="{{ url_for('choose_theme') }}" style="display:inline;">
-                <input type="hidden" name="theme_id" value="{{ t.id }}">
-                <button type="submit">Set as My Theme</button>
-            </form>
-        </li>
-    {% endfor %}
-</ul>
-<form method="post" enctype="multipart/form-data">
-    <p>Import Theme: <input type="file" name="file"> Theme name: <input name="theme_name" required> <button type="submit">Import</button></p>
-</form>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Theme Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .color-preview {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 5px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Theme Management</h2>
+            <a href="javascript:history.back()" class="btn btn-outline-secondary">Back to Profile</a>
+        </div>
+
+        <div class="card mb-5 shadow-sm">
+            <div class="card-header">Available Themes</div>
+            <div class="card-body">
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    {% for t in themes %}
+                    <div class="col">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">{{ t.name }}</h5>
+                                <p class="card-text">
+                                    <span class="color-preview" style="background-color:{{ t.color }};"></span>
+                                    <span style="color:{{ t.color }}; font-family: {{ t.font }};">
+                                        {{ t.font }} Font
+                                    </span>
+                                </p>
+                                <form method="post" action="{{ url_for('choose_theme') }}">
+                                    <input type="hidden" name="theme_id" value="{{ t.id }}">
+                                    <button type="submit" class="btn btn-primary w-100">Set as My Theme</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">Import New Theme</div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label">Theme File (JSON/CSS)</label>
+                        <input type="file" name="file" class="form-control" required>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Theme Name</label>
+                        <input name="theme_name" class="form-control" placeholder="My New Theme" required>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-success w-100">Import</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
