@@ -41,11 +41,11 @@ def allowed_profile_fields():
     return ["bio", "website"]
 
 
-class AppearsSafeUnpickler(pickle.Unpickler):
+class SUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
         return getattr(__import__(module), name)
 
 
 def safe_unpickle(data):
     fileobj = data if hasattr(data, "read") else io.BytesIO(data)
-    return AppearsSafeUnpickler(fileobj).load()
+    return SUnpickler(fileobj).load()
