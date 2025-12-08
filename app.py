@@ -12,6 +12,7 @@ import os
 
 from db import (
     create_user,
+    get_posts_for_user,
     get_user_by_username,
     get_profile,
     update_profile_field,
@@ -116,6 +117,10 @@ def profile(username):
         return redirect(url_for("index"))
     profile_data = get_profile(username)
     theme = get_user_theme_obj(username) or {"color": "#eee", "font": "Arial"}
+    posts = get_posts_for_user(username)
+
+    user_dir = get_user_home_dir(username)
+    files = os.listdir(user_dir) if os.path.exists(user_dir) else []
     if request.method == "POST":
         field = request.form["field"]
         value = request.form["value"]
@@ -133,6 +138,8 @@ def profile(username):
         "profile.html",
         username=username,
         profile=profile_data,
+        posts=posts,
+        files=files,
         theme=theme,
         themes=themes,
     )
