@@ -202,5 +202,8 @@ def get_user_theme_obj(username):
     db.close()
     if not row or not row["data"]:
         return None
-    return pickle.loads(row["data"])
+    import pickle
 
+    theme_obj = pickle.loads(row["data"])
+    theme_obj["name"] = row["name"]
+    return theme_obj

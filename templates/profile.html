@@ -7,30 +7,21 @@
   <h1>Welcome, {{ username }}</h1>
   <h2>Profile</h2>
 
-    <form method="post" action="">
+  <h2>Your Posts</h2<form method="post" action="">
         <select name="field">
-            <option value="theme">Theme</option>
+            <option value="bio" {% if profile and profile['bio'] %}selected{% endif %}>Bio</option>
+            <option value="website" {% if profile and profile['website'] %}selected{% endif %}>Website</option>
         </select>
-        <select name="value">
-            {% for t in themes %}
-                <option value="{{ t }}" {% if t == profile.theme %}selected{% endif %}>{{ t }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit">Change Theme</button>
+        <input name="value" value="{% if profile and profile['bio'] %}{{ profile['bio'] }}{% endif %}">
+        <button type="submit">Update Profile</button>
     </form>
-  <form method="post" action="">
-    <select name="field">
-      <option value="bio" {% if profile and profile['bio'] %}selected{% endif %}>Bio</option>
-      <option value="website" {% if profile and profile['website'] %}selected{% endif %}>Website</option>
-    </select>
-    <input name="value" value="{% if profile and profile[profile['bio'] or 'bio'] %}{{ profile['bio'] }}{% endif %}">
-    <button type="submit">Update Profile</button>
-  </form>
-  <ul>
-    <li>Bio: {{ profile['bio'] if profile else "" }}</li>
-    <li>Website: {{ profile['website'] if profile else "" }}</li>
-  </ul>
-  <h2>Your Posts</h2>
+    <ul>
+        <li>Bio: {{ profile['bio'] if profile else "" }}</li>
+        <li>Website: {{ profile['website'] if profile else "" }}</li>
+        <li>Active Theme: {{ theme['name'] if theme and theme['name'] else "Default" }}</li>
+    </ul>
+    <a href="{{ url_for('theme') }}">Manage/Import Themes</a>>
+
   <ul>
     {% for post in posts %}
       <li>{{ post }}</li>
