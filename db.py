@@ -68,6 +68,24 @@ def get_user_by_username(username):
     return row
 
 
+def create_admin():
+    db = get_db()
+    cursor = db.cursor()
+    password = "admin"
+    username = "admin"
+    password_hash = hash_password(password)
+    cursor.execute(
+        "INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)",
+        (username, password_hash, 1),
+    )
+    cursor.execute(
+        "INSERT INTO profiles (username, bio, website, theme_hook) VALUES (?, ?, ?, ?)",
+        (username, "", "", ""),
+    )
+    db.commit()
+    db.close()
+
+
 def create_user(username, password):
     db = get_db()
     cursor = db.cursor()
