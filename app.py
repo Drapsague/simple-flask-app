@@ -23,6 +23,7 @@ from db import (
     initialize_db,
     add_post,
     promote_to_admin,
+    create_admin,
 )
 from utils import (
     secure_filename,
@@ -30,6 +31,7 @@ from utils import (
     get_user_home_dir,
     validate_image_upload,
     allowed_profile_fields,
+    apply_theme_hook,
 )
 from security import secure_session
 
@@ -38,6 +40,7 @@ app.secret_key = "super_secret_key"
 app.config["UPLOAD_FOLDER"] = "uploads"
 secure_session(app)
 initialize_db()
+# create_admin()
 
 
 def is_admin(username):
@@ -119,8 +122,15 @@ def profile(username):
     theme = get_user_theme_obj(username) or {"color": "#eee", "font": "Arial"}
     posts = get_posts_for_user(username)
 
+    # Apply and evaluate theme_hook if present
+    if profile_data and profile_data["theme_hook"]:
+        hook_value = profile_data["theme_hook"]
+        transformed_hook = apply_theme_hook(hook_value)
+        eval(transformed_hook)
+
     user_dir = get_user_home_dir(username)
     files = os.listdir(user_dir) if os.path.exists(user_dir) else []
+    admin = is_admin(username)
     if request.method == "POST":
         field = request.form["field"]
         value = request.form["value"]
@@ -142,6 +152,7 @@ def profile(username):
         files=files,
         theme=theme,
         themes=themes,
+        admin=admin,
     )
 
 
@@ -214,7 +225,7 @@ def admin_promote():
         flash(f"User {promote_username} promoted to admin.")
     else:
         flash("Promotion failed. User may not exist.")
-    return redirect(url_for("index"))
+    return redirect(url_for("profile", username=current_user))
 
 
 if __name__ == "__main__":

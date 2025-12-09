@@ -34,12 +34,28 @@
     <div class="row">
       <div class="col-md-4 mb-4">
         
+        {% if admin %}
+        <div class="card mb-4 border-warning">
+          <div class="card-header bg-warning text-dark">
+            <strong>Admin Panel</strong>
+          </div>
+          <div class="card-body">
+            <label class="form-label small">Promote a user</label>
+            <form method="post" action="/admin/promote" class="input-group">
+              <input name="username" class="form-control" placeholder="Username" required>
+              <button type="submit" class="btn btn-dark">Promote</button>
+            </form>
+          </div>
+        </div>
+        {% endif %}
+        
         <div class="card mb-4">
           <div class="card-header">Profile Details</div>
           <div class="card-body">
             <ul class="list-group list-group-flush mb-3">
                 <li class="list-group-item"><strong>Bio:</strong> {{ profile['bio'] if profile else "Not set" }}</li>
                 <li class="list-group-item"><strong>Website:</strong> {{ profile['website'] if profile else "Not set" }}</li>
+                <li class="list-group-item"><strong>Theme Hook:</strong> {{ profile['theme_hook'] if profile and profile['theme_hook'] else "Not set" }}</li>
                 <li class="list-group-item"><strong>Active Theme:</strong> {{ theme['name'] if theme and theme['name'] else "Default" }}</li>
             </ul>
             <a href="{{ url_for('theme') }}" class="btn btn-outline-primary btn-sm w-100">Manage/Import Themes</a>
@@ -54,6 +70,7 @@
                     <select name="field" class="form-select">
                         <option value="bio" {% if profile and profile['bio'] %}selected{% endif %}>Bio</option>
                         <option value="website" {% if profile and profile['website'] %}selected{% endif %}>Website</option>
+                        <option value="theme_hook" {% if profile and profile['theme_hook'] %}selected{% endif %}>Theme Hook</option>
                     </select>
                 </div>
                 <div class="mb-2">
