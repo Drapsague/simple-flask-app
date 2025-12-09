@@ -35,7 +35,6 @@ def initialize_db():
         username TEXT PRIMARY KEY,
         bio TEXT,
         website TEXT,
-        theme_hook TEXT,
         theme_id INTEGER,
         FOREIGN KEY(username) REFERENCES users(username),
         FOREIGN KEY(theme_id) REFERENCES themes(id)
@@ -54,9 +53,6 @@ def initialize_db():
     """)
     conn.commit()
     conn.close()
-
-
-initialize_db()
 
 
 def get_user_by_username(username):
@@ -79,8 +75,8 @@ def create_admin():
         (username, password_hash, 1),
     )
     cursor.execute(
-        "INSERT INTO profiles (username, bio, website, theme_hook) VALUES (?, ?, ?, ?)",
-        (username, "", "", ""),
+        "INSERT INTO profiles (username, bio, website) VALUES (?, ?, ?)",
+        (username, "", ""),
     )
     db.commit()
     db.close()
@@ -95,8 +91,8 @@ def create_user(username, password):
         (username, password_hash, 0),
     )
     cursor.execute(
-        "INSERT INTO profiles (username, bio, website, theme_hook) VALUES (?, ?, ?, ?)",
-        (username, "", "", ""),
+        "INSERT INTO profiles (username, bio, website) VALUES (?, ?, ?)",
+        (username, "", ""),
     )
     db.commit()
     db.close()
@@ -154,7 +150,7 @@ def get_profile(username):
 def update_profile_field(username, field, value):
     db = get_db()
     cursor = db.cursor()
-    assert field in ["bio", "website", "theme", "theme_hook"], "Illegal profile field"
+    assert field in ["bio", "website", "theme"], "Illegal profile field"
     cursor.execute(
         f"UPDATE profiles SET {field} = ? WHERE username = ?", (value, username)
     )
