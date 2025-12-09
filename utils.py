@@ -38,7 +38,7 @@ def validate_image_upload(filename):
 
 
 def allowed_profile_fields():
-    return ["bio", "website"]
+    return ["bio", "website", "notification_url"]
 
 
 class SUnpickler(pickle.Unpickler):

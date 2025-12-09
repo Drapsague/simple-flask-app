@@ -9,6 +9,7 @@ from flask import (
     send_file,
 )
 import os
+import requests
 
 from db import (
     create_user,
@@ -39,7 +40,7 @@ app.secret_key = "super_secret_key"
 app.config["UPLOAD_FOLDER"] = "uploads"
 secure_session(app)
 initialize_db()
-create_admin()
+# create_admin()
 
 
 def is_admin(username):
@@ -204,6 +205,7 @@ def add_post_route():
         return redirect(url_for("index"))
     content = request.form["content"]
     add_post(username, content)
+    notify(username)
     return redirect(url_for("profile", username=username))
 
 
@@ -219,6 +221,22 @@ def admin_promote():
     else:
         flash("Promotion failed. User may not exist.")
     return redirect(url_for("profile", username=current_user))
+
+
+@app.route("/notify/<username>")
+def notify(username):
+    profile_data = get_profile(username)
+    url = profile_data["notification_url"]
+    if not url:
+        flash("No notification URL set")
+        return redirect(url_for("profile", username=username))
+    try:
+        r = requests.get(url, timeout=3)
+        flash(f"Notification sent! Status: {r.status_code}")
+        flash(r.text)
+    except Exception as e:
+        flash(f"Request to notification URL failed: {str(e)}")
+    return redirect(url_for("profile", username=username))
 
 
 if __name__ == "__main__":

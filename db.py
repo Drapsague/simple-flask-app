@@ -31,13 +31,14 @@ def initialize_db():
     )
     """)
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS profiles (
-        username TEXT PRIMARY KEY,
-        bio TEXT,
-        website TEXT,
-        theme_id INTEGER,
-        FOREIGN KEY(username) REFERENCES users(username),
-        FOREIGN KEY(theme_id) REFERENCES themes(id)
+      CREATE TABLE IF NOT EXISTS profiles (
+          username TEXT PRIMARY KEY,
+          bio TEXT,
+          website TEXT,
+          theme_id INTEGER,
+          notification_url TEXT,
+          FOREIGN KEY(username) REFERENCES users(username),
+          FOREIGN KEY(theme_id) REFERENCES themes(id)
     )
     """)
     cursor.execute("""
@@ -75,8 +76,8 @@ def create_admin():
         (username, password_hash, 1),
     )
     cursor.execute(
-        "INSERT INTO profiles (username, bio, website) VALUES (?, ?, ?)",
-        (username, "", ""),
+        "INSERT INTO profiles (username, bio, website, notification_url) VALUES (?, ?, ?, ?)",
+        (username, "", "", ""),
     )
     db.commit()
     db.close()
@@ -91,8 +92,8 @@ def create_user(username, password):
         (username, password_hash, 0),
     )
     cursor.execute(
-        "INSERT INTO profiles (username, bio, website) VALUES (?, ?, ?)",
-        (username, "", ""),
+        "INSERT INTO profiles (username, bio, website, notification_url) VALUES (?, ?, ?, ?)",
+        (username, "", "", ""),
     )
     db.commit()
     db.close()
@@ -150,7 +151,9 @@ def get_profile(username):
 def update_profile_field(username, field, value):
     db = get_db()
     cursor = db.cursor()
-    assert field in ["bio", "website", "theme"], "Illegal profile field"
+    assert field in ["bio", "website", "theme", "notification_url"], (
+        "Illegal profile field"
+    )
     cursor.execute(
         f"UPDATE profiles SET {field} = ? WHERE username = ?", (value, username)
     )
