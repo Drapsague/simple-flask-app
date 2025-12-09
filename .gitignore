@@ -3,4 +3,4 @@ cache/
 __pycache__/
 uploads/
 *.png
-
+site.db
